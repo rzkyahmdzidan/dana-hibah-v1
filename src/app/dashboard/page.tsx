@@ -19,12 +19,25 @@ export default async function DashboardPage() {
 
   const approvedData = await getApprovedData();
 
+  // Admin/superadmin: tampilkan juga data pending milik sendiri
+  let pendingData: DanaHibah[] = [];
+  if (profile?.role === "admin" || profile?.role === "superadmin") {
+    const { data } = await supabase
+      .from("dana_hibah")
+      .select("*")
+      .eq("uploaded_by", user.id)
+      .eq("status", "pending")
+      .order("no", { ascending: true });
+    pendingData = (data as DanaHibah[]) || [];
+  }
+
   return (
     <DashboardClient
       email={user.email ?? ""}
       role={profile?.role ?? "user"}
       fullName={profile?.full_name ?? ""}
       initialData={approvedData}
+      pendingData={pendingData}
     />
   );
 }
