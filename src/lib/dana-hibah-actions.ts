@@ -125,7 +125,15 @@ export async function getApprovedData(): Promise<DanaHibah[]> {
 }
 
 // Fetch pending data (untuk admin panel)
-export async function getPendingUploads() {
+export async function getPendingUploads(): Promise<
+  {
+    uploadedBy: string;
+    role: string;
+    count: number;
+    uploadedAt: string;
+    rows: any[];
+  }[]
+> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.from("dana_hibah").select("*").eq("status", "pending").order("no", { ascending: true });
