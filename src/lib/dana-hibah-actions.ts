@@ -128,25 +128,33 @@ export async function getApprovedData(): Promise<DanaHibah[]> {
 export async function getPendingUploads() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from("dana_hibah").select("uploaded_by, created_at").eq("status", "pending");
-
-  console.log("DANA HIBAH DATA:", data);
-  console.log("DANA HIBAH ERROR:", error);
+  const { data, error } = await supabase.from("dana_hibah").select("*").eq("status", "pending").order("no", { ascending: true });
 
   if (error || !data) return [];
 
-  // Group by uploader
-  const grouped: Record<string, { uploadedBy: string; role: string; count: number; uploadedAt: string }> = {};
+  const grouped: Record<
+    string,
+    {
+      uploadedBy: string;
+      role: string;
+      count: number;
+      uploadedAt: string;
+      rows: any[];
+    }
+  > = {};
+
   for (const row of data) {
     if (!grouped[row.uploaded_by]) {
       grouped[row.uploaded_by] = {
         uploadedBy: row.uploaded_by,
-        role: row.uploaded_by_role,
+        role: "",
         count: 0,
         uploadedAt: row.created_at,
+        rows: [],
       };
     }
     grouped[row.uploaded_by].count++;
+    grouped[row.uploaded_by].rows.push(row);
   }
 
   return Object.values(grouped);
