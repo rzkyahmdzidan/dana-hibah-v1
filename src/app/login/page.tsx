@@ -22,14 +22,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100 rounded-full opacity-40" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-100 rounded-full opacity-30" />
       </div>
 
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-700 shadow-lg mb-4">
             <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +39,6 @@ export default function LoginPage() {
           <p className="text-sm text-slate-400 mt-1">KPPN Medan 1</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <h2 className="text-base font-semibold text-slate-800 mb-5">
             {isRegister ? "Buat Akun Baru" : "Masuk ke Dashboard"}
@@ -56,7 +53,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   placeholder="Nama lengkap Anda"
-                  className="w-full px-3 py-2.5 text-slate-900 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
                 />
               </div>
             )}
@@ -68,7 +65,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 placeholder="email@kemenk.go.id"
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
               />
             </div>
 
@@ -80,7 +77,7 @@ export default function LoginPage() {
                 required
                 placeholder="••••••••"
                 minLength={6}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
               />
             </div>
 
@@ -111,9 +108,7 @@ export default function LoginPage() {
               onClick={() => { setIsRegister(!isRegister); setError(null); }}
               className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
             >
-              {isRegister
-                ? "Sudah punya akun? Masuk"
-                : "Belum punya akun? Daftar"}
+              {isRegister ? "Sudah punya akun? Masuk" : "Belum punya akun? Daftar"}
             </button>
           </div>
         </div>
