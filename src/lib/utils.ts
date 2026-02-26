@@ -20,16 +20,16 @@ export function formatNumber(value: number): string {
 
 export function parseExcelData(jsonData: Record<string, unknown>[]): DanaHibah[] {
   return jsonData.map((row, index) => ({
-    no: Number(row["No"] ?? row["no"] ?? index + 1),
+    no: Number(row["No."] ?? row["No"] ?? row["no"] ?? index + 1),
     tipe_hibah: String(row["Tipe Hibah"] ?? row["tipe_hibah"] ?? ""),
-    no_sphl: String(row["No SPHL"] ?? row["no_sphl"] ?? ""),
+    no_sphl: String(row["No. SPHL"] ?? row["No SPHL"] ?? row["no_sphl"] ?? ""),
     tanggal_sphl: String(row["Tanggal SPHL"] ?? row["tanggal_sphl"] ?? ""),
     kode_kppn: String(row["Kode KPPN"] ?? row["kode_kppn"] ?? ""),
     ba_eselon_i: String(row["BA Eselon I"] ?? row["ba_eselon_i"] ?? ""),
     kode_satker: String(row["Kode Satker"] ?? row["kode_satker"] ?? ""),
     nama_satker: String(row["Nama Satker"] ?? row["nama_satker"] ?? ""),
     lokasi_satker: String(row["Lokasi Satker"] ?? row["lokasi_satker"] ?? ""),
-    no_register: String(row["No Register"] ?? row["no_register"] ?? ""),
+    no_register: String(row["No Register"] ?? row["No. Register"] ?? row["no_register"] ?? ""),
     mata_uang: String(row["Mata Uang"] ?? row["mata_uang"] ?? "IDR"),
     nilai_belanja: Number(row["Nilai Belanja"] ?? row["nilai_belanja"] ?? 0),
     nilai_pendapatan: Number(row["Nilai Pendapatan"] ?? row["nilai_pendapatan"] ?? 0),
@@ -37,7 +37,9 @@ export function parseExcelData(jsonData: Record<string, unknown>[]): DanaHibah[]
 }
 
 export function computeSummary(data: DanaHibah[]): SummaryStats {
-  const satkerSet = new Set(data.map((d) => d.kode_satker));
+  const satkerSet = new Set(
+    data.map((d) => d.kode_satker || d.nama_satker).filter(Boolean)
+  );
   return {
     totalData: data.length,
     totalSatker: satkerSet.size,
