@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
 import { getApprovedData } from "@/lib/dana-hibah-actions";
@@ -9,20 +8,28 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data.user;
+  } catch {
+    // Token expired/invalid — treat as guest
+  }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
 
   const approvedData = await getApprovedData();
 
-  // Admin/superadmin: tampilkan juga data pending milik sendiri
   let pendingData: DanaHibah[] = [];
-  if (profile?.role === "admin" || profile?.role === "superadmin") {
+  if (user && (profile?.role === "admin" || profile?.role === "superadmin")) {
     const { data } = await supabase
       .from("dana_hibah")
       .select("*")
@@ -34,7 +41,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      email={user.email ?? ""}
+      email={user?.email ?? ""}
       role={profile?.role ?? "user"}
       fullName={profile?.full_name ?? ""}
       initialData={approvedData}

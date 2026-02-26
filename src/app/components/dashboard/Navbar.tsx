@@ -18,6 +18,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 export default function Navbar({ email, role, fullName }: NavbarProps) {
   const [isPending, startTransition] = useTransition();
   const badge = roleBadge[role] ?? roleBadge.user;
+  const isLoggedIn = !!email;
 
   function handleLogout() {
     startTransition(async () => { await logout(); });
@@ -57,31 +58,46 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
           </nav>
         )}
 
-        {/* User info */}
+        {/* Kanan: user info / tombol login */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end">
-            <span className="text-xs font-medium text-slate-700 leading-none">
-              {fullName || email}
-            </span>
-            <span className={`text-xs mt-1 px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
-              {badge.label}
-            </span>
-          </div>
-          <button
-            onClick={handleLogout}
-            disabled={isPending}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-3 py-1.5 rounded-lg transition-colors"
-          >
-            {isPending ? (
-              <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
+          {isLoggedIn ? (
+            <>
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-xs font-medium text-slate-700 leading-none">
+                  {fullName || email}
+                </span>
+                <span className={`text-xs mt-1 px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
+                  {badge.label}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                disabled={isPending}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {isPending ? (
+                  <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                )}
+                Keluar
+              </button>
+            </>
+          ) : (
+            <a
+              href="/login"
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
-            )}
-            Keluar
-          </button>
+              Masuk
+            </a>
+          )}
         </div>
       </div>
     </header>

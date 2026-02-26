@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -23,27 +22,27 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
-
-  // Kalau belum login dan akses halaman protected → redirect ke login
-  if (!user && path.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data.user;
+  } catch {
+    // Token invalid — treat as guest
   }
 
-  // Kalau sudah login dan buka /login → redirect ke dashboard
+  const path = request.nextUrl.pathname;
+
   if (user && path === "/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Proteksi halaman admin — hanya admin & superadmin
-  if (user && path.startsWith("/admin")) {
+  if (path.startsWith("/admin")) {
+    if (!user) return NextResponse.redirect(new URL("/login", request.url));
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
-
     if (!profile || !["admin", "superadmin"].includes(profile.role)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -53,5 +52,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login"],
+  matcher: ["/admin/:path*", "/login"],
 };
