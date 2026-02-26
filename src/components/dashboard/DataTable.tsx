@@ -25,7 +25,6 @@ export default function DataTable({ data }: DataTableProps) {
       const matchSearch =
         !q ||
         d.nama_satker.toLowerCase().includes(q) ||
-        d.no_sphl.toLowerCase().includes(q) ||
         d.no_register.toLowerCase().includes(q) ||
         d.kode_satker.includes(q);
       const matchLokasi = !filterLokasi || d.lokasi_satker === filterLokasi;
@@ -61,7 +60,7 @@ export default function DataTable({ data }: DataTableProps) {
               </svg>
               <input
                 type="text"
-                placeholder="Cari satker, no SPHL…"
+                placeholder="Cari satker, no register…"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -97,7 +96,7 @@ export default function DataTable({ data }: DataTableProps) {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
-              {["No", "No SPHL", "Tgl SPHL", "Nama Satker", "Lokasi", "Tipe Hibah", "Mata Uang", "Nilai Belanja", "Nilai Pendapatan"].map((h) => (
+              {["No", "Nama Satker", "Lokasi", "Tipe Hibah", "Mata Uang", "Nilai Belanja", "Nilai Pendapatan"].map((h) => (
                 <th key={h} className="px-4 py-2.5 text-left font-semibold text-slate-500 whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -105,14 +104,12 @@ export default function DataTable({ data }: DataTableProps) {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-10 text-slate-400">Tidak ada data ditemukan</td>
+                <td colSpan={7} className="text-center py-10 text-slate-400">Tidak ada data ditemukan</td>
               </tr>
             ) : (
               paged.map((d, i) => (
                 <tr key={i} className="border-b border-slate-50 hover:bg-blue-50/40 transition-colors">
                   <td className="px-4 py-2.5 text-slate-400">{d.no}</td>
-                  <td className="px-4 py-2.5 font-mono text-slate-600 whitespace-nowrap">{d.no_sphl}</td>
-                  <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">{d.tanggal_sphl}</td>
                   <td className="px-4 py-2.5 text-slate-700 font-medium max-w-[200px] truncate" title={d.nama_satker}>{d.nama_satker}</td>
                   <td className="px-4 py-2.5">
                     <span className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 whitespace-nowrap">{d.lokasi_satker}</span>
