@@ -67,3 +67,30 @@ export function groupByTipe(data: DanaHibah[]): ChartData[] {
   }
   return Object.values(map);
 }
+
+// Tambahkan 2 fungsi ini ke src/lib/utils.ts
+
+export function groupBySatker(data: DanaHibah[]): ChartData[] {
+  const map: Record<string, ChartData> = {};
+  for (const d of data) {
+    const key = d.nama_satker || d.kode_satker || "Tidak Diketahui";
+    if (!map[key]) map[key] = { label: key, belanja: 0, pendapatan: 0 };
+    map[key].belanja += d.nilai_belanja;
+    map[key].pendapatan += d.nilai_pendapatan;
+  }
+  return Object.values(map).sort((a, b) => b.belanja - a.belanja);
+}
+
+export function groupByBulan(data: DanaHibah[]): ChartData[] {
+  const map: Record<string, ChartData> = {};
+  for (const d of data) {
+    const tgl = d.tanggal_sphl ? new Date(d.tanggal_sphl) : null;
+    const key = tgl && !isNaN(tgl.getTime())
+      ? tgl.toLocaleDateString("id-ID", { month: "short", year: "numeric" })
+      : "Tidak Diketahui";
+    if (!map[key]) map[key] = { label: key, belanja: 0, pendapatan: 0 };
+    map[key].belanja += d.nilai_belanja;
+    map[key].pendapatan += d.nilai_pendapatan;
+  }
+  return Object.values(map);
+}

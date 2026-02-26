@@ -64,7 +64,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                placeholder="email@kemenk.go.id"
+                placeholder="email@gmail.com"
                 className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
               />
             </div>
