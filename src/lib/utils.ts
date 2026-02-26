@@ -19,26 +19,44 @@ export function formatNumber(value: number): string {
 }
 
 export function parseExcelData(jsonData: Record<string, unknown>[]): DanaHibah[] {
-  return jsonData.map((row, index) => ({
-    no: Number(row["No."] ?? row["No"] ?? row["no"] ?? index + 1),
-    tipe_hibah: String(row["Tipe Hibah"] ?? row["tipe_hibah"] ?? ""),
-    no_sphl: String(row["No. SPHL"] ?? row["No SPHL"] ?? row["no_sphl"] ?? ""),
-    tanggal_sphl: String(row["Tanggal SPHL"] ?? row["tanggal_sphl"] ?? ""),
-    kode_kppn: String(row["Kode KPPN"] ?? row["kode_kppn"] ?? ""),
-    ba_eselon_i: String(row["BA Eselon I"] ?? row["ba_eselon_i"] ?? ""),
-    kode_satker: String(row["Kode Satker"] ?? row["kode_satker"] ?? ""),
-    nama_satker: String(row["Nama Satker"] ?? row["nama_satker"] ?? ""),
-    lokasi_satker: String(row["Lokasi Satker"] ?? row["lokasi_satker"] ?? ""),
-    no_register: String(row["No Register"] ?? row["No. Register"] ?? row["no_register"] ?? ""),
-    mata_uang: String(row["Mata Uang"] ?? row["mata_uang"] ?? "IDR"),
-    nilai_belanja: Number(row["Nilai Belanja"] ?? row["nilai_belanja"] ?? 0),
-    nilai_pendapatan: Number(row["Nilai Pendapatan"] ?? row["nilai_pendapatan"] ?? 0),
-  }));
+  function convertDate(raw: string): string {
+    const [dd, mm, yyyy] = raw.split("-");
+    if (dd && mm && yyyy) return `${yyyy}-${mm}-${dd}`;
+    return "";
+  }
+
+  return jsonData.map((row, index) => {
+    const noSphlTanggal = String(row["No. SPHL Tanggal SPHL"] ?? "");
+    const parts = noSphlTanggal.trim().split(/\s+/);
+    const no_sphl = parts[0] ?? "";
+    const tanggal_sphl = parts[1] ? convertDate(parts[1]) : "";
+
+    const baKode = String(row["BA Eselon I Kode Satker"] ?? "");
+    const baParts = baKode.trim().split(/\s+/);
+    const ba_eselon_i = baParts[0] ?? "";
+    const kode_satker = baParts[1] ?? "";
+
+    return {
+      no: Number(row["No."] ?? row["No"] ?? index + 1),
+      tipe_hibah: String(row["Tipe Hibah"] ?? ""),
+      no_sphl,
+      tanggal_sphl,
+      kode_kppn: String(row["Kode KPPN"] ?? ""),
+      ba_eselon_i,
+      kode_satker,
+      nama_satker: String(row["Nama Satker"] ?? ""),
+      lokasi_satker: String(row["Lokasi Satker"] ?? ""),
+      no_register: String(row["No Register"] ?? ""),
+      mata_uang: String(row["Mata Uang"] ?? "IDR"),
+      nilai_belanja: Number(row["Nilai Belanja"] ?? 0),
+      nilai_pendapatan: Number(row["Nilai Pendapatan"] ?? 0),
+    };
+  });
 }
 
 export function computeSummary(data: DanaHibah[]): SummaryStats {
   const satkerSet = new Set(
-    data.map((d) => d.kode_satker || d.nama_satker).filter(Boolean)
+    data.map((d) => d.nama_satker).filter(Boolean)
   );
   return {
     totalData: data.length,
@@ -56,7 +74,9 @@ export function groupByLokasi(data: DanaHibah[]): ChartData[] {
     map[key].belanja += d.nilai_belanja;
     map[key].pendapatan += d.nilai_pendapatan;
   }
-  return Object.values(map).sort((a, b) => b.belanja - a.belanja).slice(0, 8);
+  return Object.values(map)
+    .sort((a, b) => b.belanja - a.belanja)
+    .slice(0, 8);
 }
 
 export function groupByTipe(data: DanaHibah[]): ChartData[] {
@@ -94,5 +114,5 @@ export function groupByBulan(data: DanaHibah[]): ChartData[] {
     map[key].belanja += d.nilai_belanja;
     map[key].pendapatan += d.nilai_pendapatan;
   }
-  return Object.values(map);
+  return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
 }

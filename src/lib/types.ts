@@ -12,6 +12,7 @@ export interface DanaHibah {
   mata_uang: string;
   nilai_belanja: number;
   nilai_pendapatan: number;
+  created_at?: string; // ← tambah ini
 }
 
 export interface SummaryStats {
