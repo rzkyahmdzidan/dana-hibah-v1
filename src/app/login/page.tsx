@@ -56,7 +56,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   placeholder="Nama lengkap Anda"
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2.5 text-slate-900 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all"
                 />
               </div>
             )}
