@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { DanaHibah } from "@/lib/types";
-import { computeSummary, formatRupiah, groupByLokasi, groupByTipe } from "@/lib/utils";
+import { computeSummary, formatRupiah, groupByLokasi, groupByTipe, groupBySatker, groupByBulan } from "@/lib/utils";
 import { generateSampleData } from "@/lib/sampleData";
 import StatCard from "@/components/dashboard/StatCard";
 import UploadExcel from "@/components/dashboard/UploadExcel";
 import DataTable from "@/components/dashboard/DataTable";
-import { BarChartLokasi, PieChartTipe } from "@/components/dashboard/Charts";
+import { PieChartSatker, BarChartTop10, DonutChartBulan, BarChartPerbandingan } from "@/components/dashboard/Charts";
 import Navbar from "@/app/components/dashboard/Navbar";
 
 interface DashboardClientProps {
@@ -21,6 +21,7 @@ interface DashboardClientProps {
 export default function DashboardClient({ email, role, fullName, initialData, pendingData }: DashboardClientProps) {
   const [data, setData] = useState<DanaHibah[]>(initialData);
   const [hasData, setHasData] = useState(initialData.length > 0);
+  const [localPendingCount, setLocalPendingCount] = useState(pendingData.length);
 
   function handleDataLoaded(rows: DanaHibah[]) {
     setData(rows);
@@ -28,25 +29,25 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
     setLocalPendingCount(rows.length);
   }
 
-  const [localPendingCount, setLocalPendingCount] = useState(pendingData.length);
   function handleLoadSample() {
     setData(generateSampleData(40));
     setHasData(true);
   }
 
   const summary = hasData ? computeSummary(data) : null;
-  const lokasiChart = hasData ? groupByLokasi(data) : [];
-  const tipeChart = hasData ? groupByTipe(data) : [];
+  const satkerChart = hasData ? groupBySatker(data) : [];
+  const bulanChart = hasData ? groupByBulan(data) : [];
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar email={email} role={role} fullName={fullName} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Upload — hanya admin & superadmin */}
-        {(role === "admin" || role === "superadmin") && <UploadExcel onDataLoaded={handleDataLoaded} onLoadSample={handleLoadSample} />}
 
-        {/* Banner pending — taruh di sini */}
+        {(role === "admin" || role === "superadmin") && (
+          <UploadExcel onDataLoaded={handleDataLoaded} onLoadSample={handleLoadSample} />
+        )}
+
         {localPendingCount > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
             <svg className="w-5 h-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,6 +59,7 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
             </div>
           </div>
         )}
+
         {role === "user" && !hasData && (
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-3">
             <svg className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,7 +72,6 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
           </div>
         )}
 
-        {/* Empty state */}
         {!hasData && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
@@ -79,13 +80,15 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
               </svg>
             </div>
             <p className="text-sm font-medium text-slate-500">Belum ada data</p>
-            {(role === "admin" || role === "superadmin") && <p className="text-xs text-slate-400 mt-1">Upload file Excel atau gunakan data contoh untuk memulai</p>}
+            {(role === "admin" || role === "superadmin") && (
+              <p className="text-xs text-slate-400 mt-1">Upload file Excel atau gunakan data contoh untuk memulai</p>
+            )}
           </div>
         )}
 
-        {/* Dashboard Content */}
         {hasData && summary && (
           <>
+            {/* Stat Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="Total Data"
@@ -116,12 +119,7 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
                 color="green"
                 icon={
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
               />
@@ -138,13 +136,12 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
-                <BarChartLokasi data={lokasiChart} />
-              </div>
-              <div>
-                <PieChartTipe data={tipeChart} />
-              </div>
+            {/* 4 Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <PieChartSatker data={satkerChart} />
+              <BarChartTop10 data={satkerChart} />
+              <DonutChartBulan data={bulanChart} />
+              <BarChartPerbandingan data={satkerChart} />
             </div>
 
             <DataTable data={data} />
