@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
 import { getApprovedData } from "@/lib/dana-hibah-actions";
+import { DanaHibah } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 

@@ -124,7 +124,7 @@ export async function getApprovedData(): Promise<DanaHibah[]> {
   return data as DanaHibah[];
 }
 
-// Fetch pending data (untuk admin panel)
+
 export async function getPendingUploads(): Promise<
   {
     uploadedBy: string;
