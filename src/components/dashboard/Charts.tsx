@@ -44,7 +44,7 @@ export function PieChartTipe({ data }: PieChartTipeProps) {
       <h3 className="text-sm font-semibold text-slate-700 mb-4">Distribusi Tipe Hibah</h3>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
-          <Pie data={data} dataKey="belanja" nameKey="label" cx="50%" cy="50%" outerRadius={90} label={({ label, percent }) => `${label} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+          <Pie data={data} dataKey="belanja" nameKey="label" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
             {data.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />
             ))}
