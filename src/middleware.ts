@@ -22,20 +22,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  let user = null;
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error) user = data.user;
-  } catch {
-    // Token invalid — treat as guest
-  }
-
+  const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
+  // Kalau sudah login dan buka /login → redirect ke dashboard
   if (user && path === "/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Proteksi halaman admin — hanya admin & superadmin
   if (path.startsWith("/admin")) {
     if (!user) return NextResponse.redirect(new URL("/login", request.url));
     const { data: profile } = await supabase
