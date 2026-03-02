@@ -27,7 +27,6 @@ function shortLabel(label: string, max = 20): string {
   return label.slice(0, max) + "…";
 }
 
-// Helper: aggregate DIPA by nama_satker
 export function groupDipaBySatker(dipaData: Dipa[]): Record<string, number> {
   const map: Record<string, number> = {};
   for (const d of dipaData) {
@@ -37,14 +36,9 @@ export function groupDipaBySatker(dipaData: Dipa[]): Record<string, number> {
   return map;
 }
 
-// 1. Pie Chart — Distribusi Dana per Satker (pakai Nilai Hibah DIPA)
 export function PieChartSatker({ data, dipaData = [] }: { data: ChartData[]; dipaData?: Dipa[] }) {
   const dipaMap = groupDipaBySatker(dipaData);
-
-  const pieData = data.map((d) => ({
-    ...d,
-    nilai: dipaMap[d.label] ?? d.belanja,
-  }));
+  const pieData = data.map((d) => ({ ...d, nilai: dipaMap[d.label] ?? d.belanja }));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
@@ -52,18 +46,8 @@ export function PieChartSatker({ data, dipaData = [] }: { data: ChartData[]; dip
       <p className="text-xs text-slate-400 mb-3">Berdasarkan Nilai Hibah (DIPA)</p>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
-          <Pie
-            data={pieData}
-            dataKey="nilai"
-            nameKey="label"
-            cx="50%"
-            cy="42%"
-            outerRadius="55%"
-            labelLine={false}
-          >
-            {pieData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-            ))}
+          <Pie data={pieData} dataKey="nilai" nameKey="label" cx="50%" cy="42%" outerRadius="55%" labelLine={false}>
+            {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
           <Tooltip
             formatter={(val: number | undefined) => [formatTooltip(val), "Nilai Hibah"]}
@@ -81,16 +65,10 @@ export function PieChartSatker({ data, dipaData = [] }: { data: ChartData[]; dip
   );
 }
 
-// 2. Horizontal Bar Chart — Top 10 Satker by Nilai Hibah DIPA
 export function BarChartTop10({ data, dipaData = [] }: { data: ChartData[]; dipaData?: Dipa[] }) {
   const dipaMap = groupDipaBySatker(dipaData);
-
   const chartData = [...data]
-    .map((d) => ({
-      ...d,
-      nilaiHibah: dipaMap[d.label] ?? 0,
-      shortLabel: shortLabel(d.label, 18),
-    }))
+    .map((d) => ({ ...d, nilaiHibah: dipaMap[d.label] ?? 0, shortLabel: shortLabel(d.label, 18) }))
     .sort((a, b) => b.nilaiHibah - a.nilaiHibah)
     .slice(0, 10);
 
@@ -115,7 +93,6 @@ export function BarChartTop10({ data, dipaData = [] }: { data: ChartData[]; dipa
   );
 }
 
-// 3. Donut Chart — Persentase Aktivitas per Bulan
 export function DonutChartBulan({ data }: { data: ChartData[] }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
@@ -123,19 +100,8 @@ export function DonutChartBulan({ data }: { data: ChartData[] }) {
       <p className="text-xs text-slate-400 mb-3">Berdasarkan Nilai Belanja SPM</p>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
-          <Pie
-            data={data}
-            dataKey="belanja"
-            nameKey="label"
-            cx="50%"
-            cy="42%"
-            innerRadius="30%"
-            outerRadius="55%"
-            labelLine={false}
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-            ))}
+          <Pie data={data} dataKey="belanja" nameKey="label" cx="50%" cy="42%" innerRadius="30%" outerRadius="55%" labelLine={false}>
+            {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
           <Tooltip
             formatter={(val: number | undefined) => [formatTooltip(val), "Nilai Belanja"]}
@@ -153,16 +119,10 @@ export function DonutChartBulan({ data }: { data: ChartData[] }) {
   );
 }
 
-// 4. Horizontal Bar Chart — Perbandingan: Nilai Hibah (DIPA) vs Belanja vs Pendapatan
 export function BarChartPerbandingan({ data, dipaData = [] }: { data: ChartData[]; dipaData?: Dipa[] }) {
   const dipaMap = groupDipaBySatker(dipaData);
-
   const chartData = [...data]
-    .map((d) => ({
-      ...d,
-      nilaiHibah: dipaMap[d.label] ?? 0,
-      shortLabel: shortLabel(d.label, 18),
-    }))
+    .map((d) => ({ ...d, nilaiHibah: dipaMap[d.label] ?? 0, shortLabel: shortLabel(d.label, 18) }))
     .sort((a, b) => b.nilaiHibah - a.nilaiHibah)
     .slice(0, 10);
 
@@ -176,7 +136,7 @@ export function BarChartPerbandingan({ data, dipaData = [] }: { data: ChartData[
           <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} tickFormatter={formatAxis} tickLine={false} axisLine={false} />
           <YAxis type="category" dataKey="shortLabel" tick={{ fontSize: 10, fill: "#64748b" }} width={120} tickLine={false} axisLine={false} />
           <Tooltip
-            formatter={(val: number | undefined, name: string) => [formatTooltip(val), name]}
+            formatter={(val: number | undefined, name: string | undefined) => [formatTooltip(val), name ?? ""]}
             labelFormatter={(label) => chartData.find((d) => d.shortLabel === label)?.label ?? label}
             contentStyle={{ borderRadius: 10, fontSize: 12 }}
           />
