@@ -34,7 +34,7 @@ export interface Dipa {
   kppn: string;
   tipe_hibah: string;
   no_dipa: string;
-  tanggal_dipa: string;
+  tanggal_dipa: string | null;
   revisi_ke: string;
   ba_eselon_i: string;
   kode_satker: string;
