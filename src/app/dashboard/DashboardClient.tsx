@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DanaHibah } from "@/lib/types";
+import { DanaHibah, Dipa } from "@/lib/types";
 import { computeSummary, formatRupiah, groupByLokasi, groupByTipe, groupBySatker, groupByBulan } from "@/lib/utils";
 import { generateSampleData } from "@/lib/sampleData";
 import StatCard from "@/components/dashboard/StatCard";
@@ -16,9 +16,10 @@ interface DashboardClientProps {
   fullName: string;
   initialData: DanaHibah[];
   pendingData: DanaHibah[];
+  dipaData?: Dipa[];
 }
 
-export default function DashboardClient({ email, role, fullName, initialData, pendingData }: DashboardClientProps) {
+export default function DashboardClient({ email, role, fullName, initialData, pendingData, dipaData = [] }: DashboardClientProps) {
   const [data, setData] = useState<DanaHibah[]>(initialData);
   const [hasData, setHasData] = useState(initialData.length > 0);
   const [localPendingCount, setLocalPendingCount] = useState(pendingData.length);
@@ -28,7 +29,6 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
     setHasData(true);
     setLocalPendingCount(rows.length);
   }
-
   function handleLoadSample() {
     setData(generateSampleData(40));
     setHasData(true);
@@ -37,16 +37,14 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
   const summary = hasData ? computeSummary(data) : null;
   const satkerChart = hasData ? groupBySatker(data) : [];
   const bulanChart = hasData ? groupByBulan(data) : [];
-
+  const totalNilaiHibah = dipaData.reduce((sum, d) => sum + (d.nilai_hibah ?? 0), 0);
+  const totalDipa = dipaData.length;
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar email={email} role={role} fullName={fullName} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-        {(role === "admin" || role === "superadmin") && (
-          <UploadExcel onDataLoaded={handleDataLoaded} onLoadSample={handleLoadSample} />
-        )}
+        {(role === "admin" || role === "superadmin") && <UploadExcel onDataLoaded={handleDataLoaded} onLoadSample={handleLoadSample} />}
 
         {localPendingCount > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
@@ -66,8 +64,7 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-blue-800">Menunggu data dari Admin</p>
-              <p className="text-xs text-blue-600 mt-0.5">Data akan tersedia setelah admin mengupload file Excel. Hubungi admin untuk informasi lebih lanjut.</p>
+              <p className="text-sm font-medium text-blue-800">Tidak Ada data yang tersedia</p>
             </div>
           </div>
         )}
@@ -80,20 +77,18 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
               </svg>
             </div>
             <p className="text-sm font-medium text-slate-500">Belum ada data</p>
-            {(role === "admin" || role === "superadmin") && (
-              <p className="text-xs text-slate-400 mt-1">Upload file Excel atau gunakan data contoh untuk memulai</p>
-            )}
+            {(role === "admin" || role === "superadmin") && <p className="text-xs text-slate-400 mt-1">Upload file Excel atau gunakan data contoh untuk memulai</p>}
           </div>
         )}
 
         {hasData && summary && (
           <>
             {/* Stat Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard
-                title="Total Data"
+                title="Total Data SPM"
                 value={summary.totalData.toLocaleString("id-ID")}
-                sub="Jumlah record"
+                sub="Jumlah record SPM Pengesahan"
                 color="blue"
                 icon={
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,13 +108,29 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
                 }
               />
               <StatCard
+                title="Total Nilai Hibah (Pagu)"
+                value={formatRupiah(totalNilaiHibah)}
+                sub="Dari DIPA"
+                color="gold"
+                icon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                  </svg>
+                }
+              />
+              <StatCard
                 title="Total Nilai Belanja"
                 value={formatRupiah(summary.totalBelanja)}
-                sub="Akumulasi semua data"
+                sub="Realisasi dari SPM"
                 color="green"
                 icon={
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 }
               />
@@ -137,14 +148,15 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
             </div>
 
             {/* 4 Charts */}
+            {/* 4 Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PieChartSatker data={satkerChart} />
-              <BarChartTop10 data={satkerChart} />
+              <PieChartSatker data={satkerChart} dipaData={dipaData} />
+              <BarChartTop10 data={satkerChart} dipaData={dipaData} />
               <DonutChartBulan data={bulanChart} />
-              <BarChartPerbandingan data={satkerChart} />
+              <BarChartPerbandingan data={satkerChart} dipaData={dipaData} />
             </div>
 
-            <DataTable data={data} />
+            <DataTable data={data} dipaData={dipaData} />
           </>
         )}
       </main>

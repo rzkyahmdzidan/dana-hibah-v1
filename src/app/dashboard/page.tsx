@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
-import { getApprovedData } from "@/lib/dana-hibah-actions";
+import { getApprovedData, getApprovedDipa } from "@/lib/dana-hibah-actions";
 import { DanaHibah } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,6 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Ambil profile jika sudah login
   let profile = null;
   if (user) {
     const { data } = await supabase
@@ -21,8 +20,8 @@ export default async function DashboardPage() {
   }
 
   const approvedData = await getApprovedData();
+  const approvedDipa = await getApprovedDipa();
 
-  // Pending data hanya untuk admin/superadmin
   let pendingData: DanaHibah[] = [];
   if (user && (profile?.role === "admin" || profile?.role === "superadmin")) {
     const { data } = await supabase
@@ -41,6 +40,7 @@ export default async function DashboardPage() {
       fullName={profile?.full_name ?? ""}
       initialData={approvedData}
       pendingData={pendingData}
+      dipaData={approvedDipa}
     />
   );
 }

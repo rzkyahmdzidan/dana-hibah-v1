@@ -1,10 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import * as XLSX from "xlsx";
 import { DanaHibah } from "@/lib/types";
-import { parseExcelData } from "@/lib/utils";
-import { uploadDanaHibah } from "@/lib/dana-hibah-actions";
+import { uploadDualSheetExcel } from "@/lib/dana-hibah-actions";
 
 interface UploadExcelProps {
   onDataLoaded: (data: DanaHibah[]) => void;
@@ -20,37 +18,27 @@ export default function UploadExcel({ onDataLoaded, onLoadSample }: UploadExcelP
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   async function processFile(file: File) {
-    if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
-      setError("Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv");
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      setError("Format file tidak didukung. Gunakan .xlsx atau .xls (harus 2 sheet)");
       return;
     }
     setLoading(true);
     setError(null);
     setUploadStatus(null);
-    try {
-      const buffer = await file.arrayBuffer();
-      const data = new Uint8Array(buffer);
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[];
-      console.log("RAW KEYS:", Object.keys(json[0] ?? {}));
-      console.log("RAW ROW 0:", json[0]);
-      if (json.length === 0) {
-        setError("File kosong atau sheet pertama tidak memiliki data.");
-        return;
-      }
-      const parsed = parseExcelData(json);
-      setFileName(file.name);
 
-      // Simpan ke DB
-      const result = await uploadDanaHibah(parsed);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await uploadDualSheetExcel(formData);
+
       if (result.error) {
         setError(`Gagal menyimpan: ${result.error}`);
         return;
       }
 
-      setUploadStatus(`${result.count} baris berhasil diupload. Menunggu persetujuan superadmin.`);
-      onDataLoaded(parsed);
+      setFileName(file.name);
+      setUploadStatus(`Berhasil upload! ${result.spmCount} baris SPM + ${result.dipaCount} baris DIPA. Menunggu persetujuan superadmin.`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Gagal membaca file: ${msg}`);

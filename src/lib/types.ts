@@ -27,3 +27,22 @@ export interface ChartData {
   belanja: number;
   pendapatan: number;
 }
+
+export interface Dipa {
+  id: string;
+  no: number;
+  kppn: string;
+  tipe_hibah: string;
+  no_dipa: string;
+  tanggal_dipa: string;
+  revisi_ke: string;
+  ba_eselon_i: string;
+  kode_satker: string;
+  nama_satker: string;
+  lokasi_satker: string;
+  no_register: string;
+  nilai_hibah: number;
+  uploaded_by: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+}

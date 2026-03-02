@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminPanelClient from "./AdminPanelClient";
-import { getPendingUploads } from "@/lib/dana-hibah-actions";
+import { getPendingUploads, getAllPendingDipa } from "@/lib/dana-hibah-actions";
 import Navbar from "@/app/components/dashboard/Navbar";
+
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,10 @@ export default async function AdminPanelPage() {
   let uploaderProfiles: Record<string, { full_name: string; email: string }> = {};
 
   if (uploaderIds.length > 0) {
-    const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", uploaderIds);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", uploaderIds);
 
     if (profiles) {
       for (const p of profiles) {
@@ -35,12 +39,21 @@ export default async function AdminPanelPage() {
     }
   }
 
+
+const allPendingDipa = await getAllPendingDipa();
+const dipaByUploader: Record<string, typeof allPendingDipa> = {};
+for (const row of allPendingDipa) {
+  if (!dipaByUploader[row.uploaded_by]) dipaByUploader[row.uploaded_by] = [];
+  dipaByUploader[row.uploaded_by].push(row);
+}
+
   const pendingUploads = pendingRaw.map((p) => ({
     uploadedBy: p.uploadedBy,
     role: p.role,
     count: p.count,
     uploadedAt: p.uploadedAt,
     rows: (p as any).rows ?? [],
+    dipaRows: dipaByUploader[p.uploadedBy] ?? [],
     uploaderName: uploaderProfiles[p.uploadedBy]?.full_name || "",
     uploaderEmail: uploaderProfiles[p.uploadedBy]?.email || "",
   }));

@@ -48,3 +48,4 @@ export default function StatCard({ title, value, sub, icon, color }: StatCardPro
     </div>
   );
 }
+

@@ -36,7 +36,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             </svg>
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-800 leading-none">Dashboard Dana Hibah</h1>
+            <h1 className="text-sm font-bold text-slate-800 leading-none">Dana Hibah</h1>
             <p className="text-xs text-slate-400 mt-0.5">KPPN Medan 1</p>
           </div>
         </div>
