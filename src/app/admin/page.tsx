@@ -4,20 +4,18 @@ import AdminPanelClient from "./AdminPanelClient";
 import { getPendingUploads, getAllPendingDipa } from "@/lib/dana-hibah-actions";
 import Navbar from "@/app/components/dashboard/Navbar";
 
-
 export const dynamic = "force-dynamic";
 
 export default async function AdminPanelPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
+  // Hanya superadmin yang boleh akses Admin Panel
+  if (!profile || profile.role !== "superadmin") {
     redirect("/dashboard");
   }
 
@@ -39,13 +37,12 @@ export default async function AdminPanelPage() {
     }
   }
 
-
-const allPendingDipa = await getAllPendingDipa();
-const dipaByUploader: Record<string, typeof allPendingDipa> = {};
-for (const row of allPendingDipa) {
-  if (!dipaByUploader[row.uploaded_by]) dipaByUploader[row.uploaded_by] = [];
-  dipaByUploader[row.uploaded_by].push(row);
-}
+  const allPendingDipa = await getAllPendingDipa();
+  const dipaByUploader: Record<string, typeof allPendingDipa> = {};
+  for (const row of allPendingDipa) {
+    if (!dipaByUploader[row.uploaded_by]) dipaByUploader[row.uploaded_by] = [];
+    dipaByUploader[row.uploaded_by].push(row);
+  }
 
   const pendingUploads = pendingRaw.map((p) => ({
     uploadedBy: p.uploadedBy,
