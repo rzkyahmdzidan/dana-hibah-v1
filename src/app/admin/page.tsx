@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminPanelClient from "./AdminPanelClient";
-import { getPendingUploads, getAllPendingDipa } from "@/lib/dana-hibah-actions";
+import { getPendingUploads, getAllPendingDipa, getApprovedHistory } from "@/lib/dana-hibah-actions";
 import Navbar from "@/app/components/dashboard/Navbar";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function AdminPanelPage() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -25,10 +27,7 @@ export default async function AdminPanelPage() {
   let uploaderProfiles: Record<string, { full_name: string; email: string }> = {};
 
   if (uploaderIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", uploaderIds);
+    const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", uploaderIds);
 
     if (profiles) {
       for (const p of profiles) {
@@ -55,10 +54,12 @@ export default async function AdminPanelPage() {
     uploaderEmail: uploaderProfiles[p.uploadedBy]?.email || "",
   }));
 
+  const approvedHistory = await getApprovedHistory();
+
   return (
     <>
       <Navbar email={user.email ?? ""} role={profile.role} fullName={profile.full_name ?? ""} />
-      <AdminPanelClient pendingUploads={pendingUploads} role={profile.role} />
+      <AdminPanelClient pendingUploads={pendingUploads} role={profile.role} approvedHistory={approvedHistory} />
     </>
   );
 }

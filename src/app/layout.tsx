@@ -7,6 +7,11 @@ const geist = Geist({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Dashboard Dana Hibah — KPPN Medan 1",
   description: "Dashboard monitoring dana hibah KPPN Medan 1",
+  icons: {
+    icon: "/images/logo-kemenkeu.png",
+    shortcut: "/images/logo-kemenkeu.png",
+    apple: "/images/logo-kemenkeu.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
