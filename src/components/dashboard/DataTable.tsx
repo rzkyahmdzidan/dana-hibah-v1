@@ -32,10 +32,7 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
     const q = search.toLowerCase();
     const map = new Map<string, DanaHibah[]>();
     for (const d of data) {
-      const matchSearch = !q ||
-        d.nama_satker.toLowerCase().includes(q) ||
-        d.no_register.toLowerCase().includes(q) ||
-        d.kode_satker.toLowerCase().includes(q);
+      const matchSearch = !q || d.nama_satker.toLowerCase().includes(q) || d.no_register.toLowerCase().includes(q) || d.kode_satker.toLowerCase().includes(q);
       const matchBulan = !filterBulan || (d.tanggal_sphl?.startsWith(filterBulan) ?? false);
       if (!matchSearch || !matchBulan) continue;
       if (!map.has(d.nama_satker)) map.set(d.nama_satker, []);
@@ -44,7 +41,10 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
 
     const dipaMap = new Map<string, Dipa>();
     for (const d of dipaData) {
-      dipaMap.set(d.no_register, d);
+      const existing = dipaMap.get(d.no_register);
+      if (!existing || (d.nilai_hibah ?? 0) > (existing.nilai_hibah ?? 0)) {
+        dipaMap.set(d.no_register, d);
+      }
     }
 
     return Array.from(map.entries()).map(([nama, rows]) => ({
@@ -54,11 +54,24 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
       total_belanja: rows.reduce((s, r) => s + r.nilai_belanja, 0),
       total_pendapatan: rows.reduce((s, r) => s + r.nilai_pendapatan, 0),
       count: rows.length,
-      rows: rows.map((r) => ({
-        ...r,
-        nilai_hibah: dipaMap.get(r.no_register)?.nilai_hibah ?? null,
-        kode_satker_dipa: dipaMap.get(r.no_register)?.kode_satker ?? r.kode_satker,
-      })),
+      rows: (() => {
+        const seenRegister = new Set<string>();
+        const sorted = [...rows].sort((a, b) => {
+          if (a.no_register < b.no_register) return -1;
+          if (a.no_register > b.no_register) return 1;
+          return (b.tanggal_sphl ?? "").localeCompare(a.tanggal_sphl ?? "");
+        });
+        return sorted.map((r) => {
+          const dipa = dipaMap.get(r.no_register);
+          const sudahMuncul = seenRegister.has(r.no_register);
+          if (!sudahMuncul) seenRegister.add(r.no_register);
+          return {
+            ...r,
+            nilai_hibah: !sudahMuncul && dipa ? dipa.nilai_hibah : null,
+            kode_satker_dipa: dipa?.kode_satker ?? r.kode_satker,
+          };
+        });
+      })(),
     }));
   }, [data, dipaData, search, filterBulan]);
 
@@ -72,7 +85,9 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-slate-700">Detail Data Hibah</h3>
-            <p className="text-xs text-slate-400 mt-0.5">{grouped.length} satker · {data.length} total data</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {grouped.length} satker · {data.length} total data
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="relative">
@@ -83,25 +98,39 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
                 type="text"
                 placeholder="Cari nama satker, kode, no register…"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg w-52 focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
             </div>
             <select
               value={filterBulan}
-              onChange={(e) => { setFilterBulan(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setFilterBulan(e.target.value);
+                setPage(1);
+              }}
               className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="">Semua Bulan</option>
               {bulanOptions.map((b) => {
                 const [y, m] = b.split("-");
                 const label = new Date(Number(y), Number(m) - 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-                return <option key={b} value={b}>{label}</option>;
+                return (
+                  <option key={b} value={b}>
+                    {label}
+                  </option>
+                );
               })}
             </select>
             {(search || filterBulan) && (
               <button
-                onClick={() => { setSearch(""); setFilterBulan(""); setPage(1); }}
+                onClick={() => {
+                  setSearch("");
+                  setFilterBulan("");
+                  setPage(1);
+                }}
                 className="text-xs text-slate-400 hover:text-slate-700 px-2"
               >
                 Reset
@@ -119,9 +148,7 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
           paged.map((satker, i) => (
             <div key={satker.nama}>
               <div className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
-                  {(page - 1) * PAGE_SIZE + i + 1}
-                </div>
+                <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">{(page - 1) * PAGE_SIZE + i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{satker.nama}</p>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -143,9 +170,7 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
                 <button
                   onClick={() => setExpandedSatker(expandedSatker === satker.nama ? null : satker.nama)}
                   className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
-                    expandedSatker === satker.nama
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
+                    expandedSatker === satker.nama ? "bg-blue-600 text-white border-blue-600" : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
                   }`}
                 >
                   {expandedSatker === satker.nama ? "Tutup ▲" : "Detail ▼"}
@@ -174,13 +199,13 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
                             <td className="px-3 py-2 text-slate-400">{row.no}</td>
                             <td className="px-3 py-2 text-slate-700 font-mono">{row.kode_satker_dipa}</td>
                             <td className="px-3 py-2 text-slate-700 font-mono">{row.no_register}</td>
-                            <td className="px-3 py-2 text-slate-700 max-w-[180px] truncate" title={row.nama_satker}>{row.nama_satker}</td>
+                            <td className="px-3 py-2 text-slate-700 max-w-[180px] truncate" title={row.nama_satker}>
+                              {row.nama_satker}
+                            </td>
                             <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{row.tanggal_sphl}</td>
                             <td className="px-3 py-2 text-right font-medium text-slate-700 whitespace-nowrap">{formatRupiah(row.nilai_belanja)}</td>
                             <td className="px-3 py-2 text-right font-medium text-emerald-700 whitespace-nowrap">{formatRupiah(row.nilai_pendapatan)}</td>
-                            <td className="px-3 py-2 text-right font-medium text-purple-700 whitespace-nowrap">
-                              {row.nilai_hibah !== null ? formatRupiah(row.nilai_hibah) : <span className="text-slate-300">—</span>}
-                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-purple-700 whitespace-nowrap">{row.nilai_hibah !== null ? formatRupiah(row.nilai_hibah) : <span className="text-slate-300">—</span>}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -196,14 +221,24 @@ export default function DataTable({ data, dipaData = [] }: DataTableProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
-          <span className="text-xs text-slate-400">Halaman {page} dari {totalPages}</span>
+          <span className="text-xs text-slate-400">
+            Halaman {page} dari {totalPages}
+          </span>
           <div className="flex gap-1">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50">← Prev</button>
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50">
+              ← Prev
+            </button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
-              return <button key={pageNum} onClick={() => setPage(pageNum)} className={`w-7 h-7 text-xs rounded-lg border transition-colors ${page === pageNum ? "bg-blue-600 text-white border-blue-600" : "border-slate-200 hover:bg-slate-50"}`}>{pageNum}</button>;
+              return (
+                <button key={pageNum} onClick={() => setPage(pageNum)} className={`w-7 h-7 text-xs rounded-lg border transition-colors ${page === pageNum ? "bg-blue-600 text-white border-blue-600" : "border-slate-200 hover:bg-slate-50"}`}>
+                  {pageNum}
+                </button>
+              );
             })}
-            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50">Next →</button>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50">
+              Next →
+            </button>
           </div>
         </div>
       )}

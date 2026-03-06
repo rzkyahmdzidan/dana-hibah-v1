@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DanaHibah, Dipa } from "@/lib/types";
-import { computeSummary, formatRupiah, groupByLokasi, groupByTipe, groupBySatker, groupByBulan } from "@/lib/utils";
+import { computeSummary, formatRupiah, groupBySatker, groupByBulan } from "@/lib/utils";
 import { generateSampleData } from "@/lib/sampleData";
 import StatCard from "@/components/dashboard/StatCard";
 import UploadExcel from "@/components/dashboard/UploadExcel";
@@ -23,6 +23,7 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
   const [data, setData] = useState<DanaHibah[]>(initialData);
   const [hasData, setHasData] = useState(initialData.length > 0);
   const [localPendingCount, setLocalPendingCount] = useState(pendingData.length);
+  const [filterSatker, setFilterSatker] = useState<string>("semua");
 
   function handleDataLoaded(rows: DanaHibah[]) {
     setData(rows);
@@ -34,11 +35,28 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
     setHasData(true);
   }
 
-  const summary = hasData ? computeSummary(data) : null;
-  const satkerChart = hasData ? groupBySatker(data) : [];
-  const bulanChart = hasData ? groupByBulan(data) : [];
-  const totalNilaiHibah = dipaData.reduce((sum, d) => sum + (d.nilai_hibah ?? 0), 0);
-  const totalDipa = dipaData.length;
+  // Daftar satker unik
+  const satkerOptions = useMemo(() => {
+    const set = new Set(data.map((d) => d.nama_satker).filter(Boolean));
+    return [...set].sort();
+  }, [data]);
+
+  // Data yang sudah difilter
+  const filteredData = useMemo(() => {
+    if (filterSatker === "semua") return data;
+    return data.filter((d) => d.nama_satker === filterSatker);
+  }, [data, filterSatker]);
+
+  const filteredDipa = useMemo(() => {
+    if (filterSatker === "semua") return dipaData;
+    return dipaData.filter((d) => d.nama_satker === filterSatker);
+  }, [dipaData, filterSatker]);
+
+  const summary = hasData ? computeSummary(filteredData) : null;
+  const satkerChart = hasData ? groupBySatker(filteredData) : [];
+  const bulanChart = hasData ? groupByBulan(filteredData) : [];
+  const totalNilaiHibah = filteredDipa.reduce((sum, d) => sum + (d.nilai_hibah ?? 0), 0);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar email={email} role={role} fullName={fullName} />
@@ -83,6 +101,30 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
 
         {hasData && summary && (
           <>
+            {/* Filter Satker */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-slate-600 shrink-0">Filter Satker:</span>
+                <select
+                  value={filterSatker}
+                  onChange={(e) => setFilterSatker(e.target.value)}
+                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-700 bg-white min-w-[250px]"
+                >
+                  <option value="semua">Semua Satker</option>
+                  {satkerOptions.map((satker) => (
+                    <option key={satker} value={satker}>
+                      {satker}
+                    </option>
+                  ))}
+                </select>
+                {filterSatker !== "semua" && (
+                  <button onClick={() => setFilterSatker("semua")} className="text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 transition-colors">
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard
@@ -147,16 +189,15 @@ export default function DashboardClient({ email, role, fullName, initialData, pe
               />
             </div>
 
-            {/* 4 Charts */}
-            {/* 4 Charts */}
+            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PieChartSatker data={satkerChart} dipaData={dipaData} />
-              <BarChartTop10 data={satkerChart} dipaData={dipaData} />
+              <PieChartSatker data={satkerChart} dipaData={filteredDipa} />
+              <BarChartTop10 data={satkerChart} dipaData={filteredDipa} />
               <DonutChartBulan data={bulanChart} />
-              <BarChartPerbandingan data={satkerChart} dipaData={dipaData} />
+              <BarChartPerbandingan data={satkerChart} dipaData={filteredDipa} />
             </div>
 
-            <DataTable data={data} dipaData={dipaData} />
+            <DataTable data={filteredData} dipaData={filteredDipa} />
           </>
         )}
       </main>

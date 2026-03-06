@@ -103,15 +103,23 @@ export function groupBySatker(data: DanaHibah[]): ChartData[] {
 }
 
 export function groupByBulan(data: DanaHibah[]): ChartData[] {
-  const map: Record<string, ChartData> = {};
+  const map: Record<string, { belanja: number; pendapatan: number; date: Date }> = {};
+
+  const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
   for (const d of data) {
     const tgl = d.tanggal_sphl ? new Date(d.tanggal_sphl) : null;
-    const key = tgl && !isNaN(tgl.getTime()) ? tgl.toLocaleDateString("id-ID", { month: "short", year: "numeric" }) : "Tidak Diketahui";
-    if (!map[key]) map[key] = { label: key, belanja: 0, pendapatan: 0 };
+    if (!tgl || isNaN(tgl.getTime())) continue;
+
+    const key = `${BULAN[tgl.getMonth()]} ${tgl.getFullYear()}`;
+    if (!map[key]) map[key] = { belanja: 0, pendapatan: 0, date: new Date(tgl.getFullYear(), tgl.getMonth(), 1) };
     map[key].belanja += d.nilai_belanja;
     map[key].pendapatan += d.nilai_pendapatan;
   }
-  return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
+
+  return Object.entries(map)
+    .sort(([, a], [, b]) => a.date.getTime() - b.date.getTime())
+    .map(([label, { belanja, pendapatan }]) => ({ label, belanja, pendapatan }));
 }
 export function parseDipaSheet(jsonData: Record<string, unknown>[]): Omit<Dipa, "id" | "uploaded_by" | "status" | "created_at">[] {
   function cleanNumber(raw: unknown): number {
@@ -121,24 +129,30 @@ export function parseDipaSheet(jsonData: Record<string, unknown>[]): Omit<Dipa, 
   }
 
   function splitBaKodeSatker(raw: unknown): { ba_eselon_i: string; kode_satker: string } {
-    // Value: "'060 01 640427" → ba_eselon_i: "060 01", kode_satker: "640427"
     const s = String(raw ?? "")
       .replace(/^'/, "")
       .trim();
     const parts = s.split(/\s+/);
     if (parts.length >= 3) {
-      return {
-        ba_eselon_i: parts.slice(0, 2).join(" "),
-        kode_satker: parts[2],
-      };
+      return { ba_eselon_i: parts.slice(0, 2).join(" "), kode_satker: parts[2] };
     }
     return { ba_eselon_i: s, kode_satker: "" };
   }
 
-  return jsonData
+  function getRevisiKe(raw: unknown): number {
+    const s = String(raw ?? "");
+    const match = s.match(/\d+/);
+    return match ? parseInt(match[0]) : 0;
+  }
+
+  // Parse semua baris
+  const allRows = jsonData
     .filter((row) => row["No."] !== undefined && row["No."] !== "")
     .map((row, index) => {
       const { ba_eselon_i, kode_satker } = splitBaKodeSatker(row["BA Eselon I  Kode Satker"]);
+      const rawDipa = String(row["No. DIPA Tanggal DIPA Revisi ke"] ?? "");
+      const dipaMatch = rawDipa.match(/^(DIPA-[\S]+)\s+(\d{2}-\d{2}-\d{4})\s+(Revisi\s+ke-?\d+)/i);
+      const revisi_ke = dipaMatch ? dipaMatch[3] : "";
 
       return {
         no: Number(row["No."] ?? index + 1),
@@ -147,8 +161,9 @@ export function parseDipaSheet(jsonData: Record<string, unknown>[]): Omit<Dipa, 
           .trim(),
         tipe_hibah: String(row["Tipe Hibah"] ?? ""),
         no_dipa: "",
-        tanggal_dipa: null,
-        revisi_ke: "",
+        tanggal_dipa: null as string | null,
+        revisi_ke,
+        revisi_num: getRevisiKe(revisi_ke),
         ba_eselon_i,
         kode_satker,
         nama_satker: String(row["Nama Satker"] ?? ""),
@@ -159,6 +174,19 @@ export function parseDipaSheet(jsonData: Record<string, unknown>[]): Omit<Dipa, 
         nilai_hibah: cleanNumber(row["Nilai Hibah"]),
       };
     });
+
+  // Tentukan revisi tertinggi per no_register
+  const maxRevisiMap = new Map<string, number>();
+  for (const row of allRows) {
+    const cur = maxRevisiMap.get(row.no_register) ?? -1;
+    if (row.revisi_num > cur) maxRevisiMap.set(row.no_register, row.revisi_num);
+  }
+
+  // Kembalikan semua baris, nilai_hibah hanya untuk revisi tertinggi
+  return allRows.map(({ revisi_num, ...row }) => ({
+    ...row,
+    nilai_hibah: revisi_num === maxRevisiMap.get(row.no_register) ? row.nilai_hibah : 0,
+  }));
 }
 
 import * as XLSX from "xlsx";
