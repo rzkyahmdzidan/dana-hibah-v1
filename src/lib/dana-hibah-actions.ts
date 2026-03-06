@@ -116,9 +116,7 @@ export async function deleteApprovedData() {
 export async function deleteApprovedByMonth(uploadedBy: string, monthKey: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Tidak terautentikasi" };
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
@@ -130,8 +128,18 @@ export async function deleteApprovedByMonth(uploadedBy: string, monthKey: string
   const endDate = `${monthKey}-31`;
 
   const [{ error: spmError }, { error: dipaError }] = await Promise.all([
-    supabase.from("dana_hibah").delete().eq("uploaded_by", uploadedBy).eq("status", "approved").gte("tanggal_sphl", startDate).lte("tanggal_sphl", endDate),
-    supabase.from("dipa").delete().eq("uploaded_by", uploadedBy).eq("status", "approved").gte("tanggal_dipa", startDate).lte("tanggal_dipa", endDate),
+    supabase.from("dana_hibah")
+      .delete()
+      .eq("uploaded_by", uploadedBy)
+      .eq("status", "approved")
+      .gte("tanggal_sphl", startDate)
+      .lte("tanggal_sphl", endDate),
+    supabase.from("dipa")
+      .delete()
+      .eq("uploaded_by", uploadedBy)
+      .eq("status", "approved")
+      .gte("tanggal_dipa", startDate)
+      .lte("tanggal_dipa", endDate),
   ]);
 
   if (spmError) return { error: spmError.message };
@@ -240,7 +248,7 @@ export async function uploadDualSheetExcel(formData: FormData) {
         dipaRows
           .map((r) => r.tanggal_dipa)
           .filter(Boolean)
-          .map((d: string) => d.slice(0, 7)),
+          .map((d) => (d as string).slice(0, 7)),
       ),
     ];
 
@@ -328,26 +336,27 @@ export async function rejectDipaByUploader(uploadedBy: string) {
 }
 
 // Riwayat approved digroup per uploader + bulan
-export async function getApprovedHistory(): Promise<
-  {
-    uploadedBy: string;
-    uploaderName: string;
-    uploaderEmail: string;
-    monthKey: string;
-    monthLabel: string;
-    approvedAt: string;
-    spmCount: number;
-    dipaCount: number;
-    totalBelanja: number;
-    totalPendapatan: number;
-    totalNilaiHibah: number;
-    rows: any[];
-    dipaRows: any[];
-  }[]
-> {
+export async function getApprovedHistory(): Promise<{
+  uploadedBy: string;
+  uploaderName: string;
+  uploaderEmail: string;
+  monthKey: string;
+  monthLabel: string;
+  approvedAt: string;
+  spmCount: number;
+  dipaCount: number;
+  totalBelanja: number;
+  totalPendapatan: number;
+  totalNilaiHibah: number;
+  rows: any[];
+  dipaRows: any[];
+}[]> {
   const supabase = await createClient();
 
-  const [{ data: spmData }, { data: dipaData }] = await Promise.all([supabase.from("dana_hibah").select("*").eq("status", "approved"), supabase.from("dipa").select("*").eq("status", "approved")]);
+  const [{ data: spmData }, { data: dipaData }] = await Promise.all([
+    supabase.from("dana_hibah").select("*").eq("status", "approved"),
+    supabase.from("dipa").select("*").eq("status", "approved"),
+  ]);
 
   if (!spmData) return [];
 
@@ -423,7 +432,9 @@ export async function getApprovedHistory(): Promise<
   // Format label bulan Indonesia
   const result = Object.values(grouped).map((g: any) => ({
     ...g,
-    monthLabel: g.monthKey ? new Date(`${g.monthKey}-01`).toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : "—",
+    monthLabel: g.monthKey
+      ? new Date(`${g.monthKey}-01`).toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+      : "—",
   }));
 
   return result.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
